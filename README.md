@@ -5,12 +5,7 @@
 
 - [中文文档](./README_CN.md)
 
->**I am no longer engaged in research and development, so the project will not be updated and maintained.<br>**
->**You can try to use the following steps to reference the remote plugin. If it doesn't work on the new version of gradle, you can fork or download this project to modify it, the code of this project is not very complex.**
->
->**P.S. Hope Google can support this damn feature as soon as possible.**
-
-The solution of merging aar works with [AGP][3] `3.0` and higher. (Tested in AGP 3.0 - 7.1.0, and Gradle 4.9 - 7.3)
+support Gradle 7.5.0 and AGP 7.4.2
 ## Getting Started
 
 ### Step 1: Add classpath
@@ -20,9 +15,10 @@ For Maven Central (The lastest release is available on [Maven Central](https://m
 buildscript {
     repositories {
         mavenCentral()
+        maven { url 'https://jitpack.io' }
     }
     dependencies {
-        classpath 'com.github.kezong:fat-aar:1.3.8'
+        classpath 'com.github.JefferyBoy:fat-aar-android:1.3.8-2'
     }
 }
 ```
