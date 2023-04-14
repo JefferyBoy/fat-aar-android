@@ -1,12 +1,25 @@
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "fat-aar-android"
+includeBuild('../source') {
+    name ':fat-aar'
+}
+include ':app'
 include ':lib-main'
 include ':lib-java'
 include ':lib-aar'
 include ':lib-aar2'
 include ':lib-aar-local'
-include ':app'
-
-includeBuild('../source') {
-    dependencySubstitution {
-        substitute module('com.github.kezong:fat-aar') using project(':')
-    }
-}

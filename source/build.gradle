@@ -1,5 +1,5 @@
 apply plugin: 'groovy'
-apply from: "./upload.gradle"
+apply plugin: 'java-gradle-plugin'
 
 buildscript {
     repositories {
@@ -11,6 +11,15 @@ repositories {
     mavenCentral()
     google()
     maven { url "https://plugins.gradle.org/m2/" }
+}
+
+gradlePlugin {
+    plugins {
+        aspectj {
+            id = "com.kezong.fat-aar"
+            implementationClass = "com.kezong.fataar.FatAarPlugin"
+        }
+    }
 }
 
 dependencies {

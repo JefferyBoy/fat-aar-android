@@ -1,7 +1,6 @@
 package com.kezong.fataar
 
 import com.android.build.gradle.api.LibraryVariant
-import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.tasks.ManifestProcessorTask
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -79,7 +78,7 @@ class VariantProcessor {
     }
 
     private static void printEmbedArtifacts(Collection<ResolvedArtifact> artifacts,
-                                     Collection<ResolvedDependency> dependencies) {
+                                            Collection<ResolvedDependency> dependencies) {
         Collection<String> moduleNames = artifacts.stream().map { it.moduleVersion.id.name }.collect()
         dependencies.each { dependency ->
             if (!moduleNames.contains(dependency.moduleName)) {
@@ -193,16 +192,16 @@ class VariantProcessor {
     private void transformRClasses(RClassesTransform transform, TaskProvider transformTask, TaskProvider bundleTask, TaskProvider reBundleTask) {
         transform.putTargetPackage(mVariant.name, mVariant.getApplicationId())
         transformTask.configure {
-                    doFirst {
-                        // library package name parsed by aar's AndroidManifest.xml
-                        // so must put after explode tasks perform.
-                        Collection libraryPackages = mAndroidArchiveLibraries
-                                .stream()
-                                .map { it.packageName }
-                                .collect()
-                        transform.putLibraryPackages(mVariant.name, libraryPackages);
-                    }
-                }
+            doFirst {
+                // library package name parsed by aar's AndroidManifest.xml
+                // so must put after explode tasks perform.
+                Collection libraryPackages = mAndroidArchiveLibraries
+                    .stream()
+                    .map { it.packageName }
+                    .collect()
+                transform.putLibraryPackages(mVariant.name, libraryPackages);
+            }
+        }
         bundleTask.configure {
             finalizedBy(reBundleTask)
         }
@@ -251,7 +250,7 @@ class VariantProcessor {
     static def getTaskDependency(ResolvedArtifact artifact) {
         try {
             return artifact.buildDependencies
-        } catch(MissingPropertyException ignore) {
+        } catch (MissingPropertyException ignore) {
             // since gradle 6.8.0, property is changed;
             return artifact.builtBy
         }
@@ -359,15 +358,15 @@ class VariantProcessor {
                 if (kotlinCompile != null) {
                     dependsOn(kotlinCompile)
                 }
-            } catch(Exception ignore) {
+            } catch (Exception ignore) {
 
             }
 
             inputs.files(mAndroidArchiveLibraries.stream().map { it.classesJarFile }.collect())
-                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                  .withPathSensitivity(PathSensitivity.RELATIVE)
             if (isMinifyEnabled) {
                 inputs.files(mAndroidArchiveLibraries.stream().map { it.localJars }.collect())
-                        .withPathSensitivity(PathSensitivity.RELATIVE)
+                      .withPathSensitivity(PathSensitivity.RELATIVE)
                 inputs.files(mJarFiles).withPathSensitivity(PathSensitivity.RELATIVE)
             }
             File outputDir = DirectoryManager.getMergeClassDirectory(mVariant)
@@ -416,7 +415,7 @@ class VariantProcessor {
             mustRunAfter(syncLibTask)
 
             inputs.files(mAndroidArchiveLibraries.stream().map { it.libsFolder }.collect())
-                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                  .withPathSensitivity(PathSensitivity.RELATIVE)
             inputs.files(mJarFiles).withPathSensitivity(PathSensitivity.RELATIVE)
             def outputDir = mVersionAdapter.getLibsDirFile()
             outputs.dir(outputDir)
@@ -441,7 +440,7 @@ class VariantProcessor {
         syncLibTask.configure {
             dependsOn(mMergeClassTask)
             inputs.files(mAndroidArchiveLibraries.stream().map { it.libsFolder }.collect())
-                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                  .withPathSensitivity(PathSensitivity.RELATIVE)
             inputs.files(mJarFiles).withPathSensitivity(PathSensitivity.RELATIVE)
         }
         extractAnnotationsTask.configure {
@@ -472,13 +471,11 @@ class VariantProcessor {
         resourceGenTask.configure {
             dependsOn(mExplodeTasks)
 
-            mProject.android.sourceSets.each { DefaultAndroidSourceSet sourceSet ->
-                if (sourceSet.name == mVariant.name) {
-                    for (archiveLibrary in mAndroidArchiveLibraries) {
-                        FatUtils.logInfo("Merge resource，Library res：${archiveLibrary.resFolder}")
-                        sourceSet.res.srcDir(archiveLibrary.resFolder)
-                    }
-                }
+            for (archiveLibrary in mAndroidArchiveLibraries) {
+                FatUtils.logInfo("Merge resource，Library res：${archiveLibrary.resFolder}")
+                mVariant.registerGeneratedResFolders(
+                    mProject.files(archiveLibrary.resFolder)
+                )
             }
         }
     }
@@ -496,8 +493,8 @@ class VariantProcessor {
 
         assetsTask.dependsOn(mExplodeTasks)
         assetsTask.doFirst {
-            mProject.android.sourceSets.each {
-                if (it.name == mVariant.name) {
+            mVariant.sourceSets.each {
+                if (it.name == mVariant.flavorName) {
                     for (archiveLibrary in mAndroidArchiveLibraries) {
                         if (archiveLibrary.assetsFolder != null && archiveLibrary.assetsFolder.exists()) {
                             FatUtils.logInfo("Merge assets，Library assets folder：${archiveLibrary.assetsFolder}")
@@ -523,12 +520,10 @@ class VariantProcessor {
             dependsOn(mExplodeTasks)
 
             doFirst {
-                for (archiveLibrary in mAndroidArchiveLibraries) {
-                    if (archiveLibrary.jniFolder != null && archiveLibrary.jniFolder.exists()) {
-                        mProject.android.sourceSets.each {
-                            if (it.name == mVariant.name) {
-                                it.jniLibs.srcDir(archiveLibrary.jniFolder)
-                            }
+                mVariant.sourceSets.each {
+                    if (it.name == mVariant.flavorName) {
+                        for (archiveLibrary in mAndroidArchiveLibraries) {
+                            it.jniLibs.srcDir(archiveLibrary.jniFolder)
                         }
                     }
                 }
@@ -561,7 +556,7 @@ class VariantProcessor {
                     FatUtils.mergeFiles(files, of)
                 } catch (Exception e) {
                     FatUtils.logAnytime(("If you see this error message, please submit issue to " +
-                            "https://github.com/kezong/fat-aar-android/issues with version of AGP and Gradle. Thank you.")
+                        "https://github.com/kezong/fat-aar-android/issues with version of AGP and Gradle. Thank you.")
                     )
                     e.printStackTrace()
                 }
@@ -578,7 +573,7 @@ class VariantProcessor {
         try {
             String mergeName = 'merge' + mVariant.name.capitalize() + 'GeneratedProguardFiles'
             mergeGenerateProguardTask = mProject.tasks.named(mergeName)
-        } catch(Exception ignore) {
+        } catch (Exception ignore) {
             return
         }
 
@@ -597,7 +592,7 @@ class VariantProcessor {
                     FatUtils.mergeFiles(files, of)
                 } catch (Exception e) {
                     FatUtils.logAnytime(("If you see this error message, please submit issue to " +
-                            "https://github.com/kezong/fat-aar-android/issues with version of AGP and Gradle. Thank you.")
+                        "https://github.com/kezong/fat-aar-android/issues with version of AGP and Gradle. Thank you.")
                     )
                     e.printStackTrace()
                 }
